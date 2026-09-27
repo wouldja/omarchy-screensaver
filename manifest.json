@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "id": "io.github.wouldja.screensaver",
+  "name": "Screensaver",
+  "version": "1.1.0",
+  "author": "Brian Ehlers",
+  "description": "Turn the screensaver on or off, set wait time, and pause it while video plays",
+  "kinds": [
+    "bar-widget"
+  ],
+  "entryPoints": {
+    "barWidget": "Panel.qml"
+  },
+  "barWidget": {
+    "displayName": "Screensaver",
+    "description": "Turn the screensaver on or off, set wait time, and pause it while video plays",
+    "category": "System",
+    "allowMultiple": false,
+    "defaultSection": "right"
+  }
+}
