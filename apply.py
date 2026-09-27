@@ -7,6 +7,7 @@ import json
 import os
 import subprocess
 import sys
+import tempfile
 from pathlib import Path
 
 HOME = Path(os.environ.get("HOME", str(Path.home())))
@@ -49,11 +50,29 @@ def read_json(path: Path) -> dict:
 
 
 def write_json(path: Path, payload: dict) -> None:
+    """Atomically replace a regular file, keeping its mode. Never follow a symlink."""
+    if path.is_symlink():
+        raise ConfigError(f"{path} is a symlink; leaving it unchanged")
     path.parent.mkdir(parents=True, exist_ok=True)
+    mode = 0o600
+    if path.exists():
+        mode = path.stat().st_mode & 0o777
     text = json.dumps(payload, indent=2) + "\n"
-    tmp = path.with_suffix(path.suffix + ".tmp")
-    tmp.write_text(text, encoding="utf-8")
-    tmp.replace(path)
+    fd, tmp_name = tempfile.mkstemp(prefix=f".{path.name}.", dir=path.parent)
+    tmp_path = Path(tmp_name)
+    try:
+        os.fchmod(fd, mode)
+        with os.fdopen(fd, "w", encoding="utf-8") as handle:
+            fd = -1
+            handle.write(text)
+            handle.flush()
+            os.fsync(handle.fileno())
+        os.replace(tmp_path, path)
+    except Exception:
+        if fd >= 0:
+            os.close(fd)
+        tmp_path.unlink(missing_ok=True)
+        raise
 
 
 def screensaver_enabled() -> bool:
