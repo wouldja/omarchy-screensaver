@@ -4,6 +4,8 @@ Bar widget for the Omarchy screensaver: turn it on or off, choose how long
 to wait after idle, and pause the screensaver and the password lock while a
 video is playing.
 
+![Screensaver panel](preview.png)
+
 ## Install
 
 ```sh
