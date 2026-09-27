@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "id": "io.github.wouldja.screensaver",
   "name": "Screensaver",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "author": "Brian Ehlers",
   "description": "Turn the screensaver on or off, set wait time, and pause it while video plays",
   "kinds": [

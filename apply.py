@@ -20,14 +20,32 @@ def run(argv: list[str]) -> subprocess.CompletedProcess[str]:
     return subprocess.run(argv, check=False, text=True, capture_output=True)
 
 
-def read_json(path: Path) -> dict:
+class ConfigError(Exception):
+    """Existing config could not be loaded, so it must not be rewritten."""
+
+
+def load_object(path: Path) -> dict:
+    """Return a JSON object. A missing file is empty. Anything else is left untouched."""
     if not path.exists():
         return {}
     try:
-        payload = json.loads(path.read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError):
+        text = path.read_text(encoding="utf-8")
+    except OSError as exc:
+        raise ConfigError(f"{path} could not be read ({exc}); leaving it unchanged") from exc
+    try:
+        payload = json.loads(text)
+    except json.JSONDecodeError as exc:
+        raise ConfigError(f"{path} is not valid JSON; leaving it unchanged") from exc
+    if not isinstance(payload, dict):
+        raise ConfigError(f"{path} is not a JSON object; leaving it unchanged")
+    return payload
+
+
+def read_json(path: Path) -> dict:
+    try:
+        return load_object(path)
+    except ConfigError:
         return {}
-    return payload if isinstance(payload, dict) else {}
 
 
 def write_json(path: Path, payload: dict) -> None:
@@ -59,11 +77,13 @@ def screensaver_seconds() -> int:
 
 def set_seconds(seconds: int) -> None:
     seconds = max(60, min(1800, int(seconds)))
-    data = read_json(SHELL_JSON)
+    data = load_object(SHELL_JSON)
     idle = data.get("idle")
-    if not isinstance(idle, dict):
+    if idle is None:
         idle = {}
         data["idle"] = idle
+    elif not isinstance(idle, dict):
+        raise ConfigError(f"{SHELL_JSON} key idle is not an object; leaving the file unchanged")
     idle["screensaver"] = seconds
     if "lock" not in idle:
         idle["lock"] = 300
@@ -78,7 +98,7 @@ def pause_on_video() -> bool:
 
 
 def set_pause_on_video(enabled: bool) -> None:
-    state = read_json(STATE_FILE)
+    state = load_object(STATE_FILE)
     state["pauseOnVideo"] = bool(enabled)
     write_json(STATE_FILE, state)
 
@@ -101,6 +121,14 @@ def main() -> int:
         return 2
 
     command = sys.argv[1]
+    try:
+        return dispatch(command)
+    except ConfigError as exc:
+        sys.stderr.write(f"{exc}\n")
+        return 1
+
+
+def dispatch(command: str) -> int:
     if command == "get":
         json.dump(current_state(), sys.stdout, separators=(",", ":"))
         sys.stdout.write("\n")

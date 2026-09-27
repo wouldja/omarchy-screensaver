@@ -25,7 +25,7 @@ omarchy plugin remove io.github.wouldja.screensaver
 ## What it changes
 
 - On/off uses `omarchy toggle screensaver` (`~/.local/state/omarchy/toggles/screensaver-off`).
-- Wait time writes `idle.screensaver` in `~/.config/omarchy/shell.json`.
+- Wait time writes `idle.screensaver` in `~/.config/omarchy/shell.json` and keeps every other setting in that file. If the file is already there but cannot be read, or it is not a JSON object, the wait time is not saved and the file is left as it is.
 - Pause-while-video is stored in `~/.local/state/omarchy/screensaver-panel.json`.
 
 While that pause is on, the widget keeps the lock from appearing during playback:
